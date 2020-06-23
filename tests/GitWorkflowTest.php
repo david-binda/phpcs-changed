@@ -365,4 +365,45 @@ EOF;
 		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
 		$this->assertEquals($expected->getMessages(), $messages->getMessages());
 	}
+
+	function testFullGitWorkflowWithExtensionsOption() {
+		$gitFile = 'hello.lib';
+		$shell = new TestShell([$gitFile]);
+		$fixture = <<<EOF
+EOF;
+		$shell->registerCommand("git status --short 'hello.lib'", $fixture);
+		$fixture = <<<EOF
+diff --git hello.lib hello.lib
+new file mode 100644
+index 0000000..6590827
+--- /dev/null
++++ hello.lib
+@@ -0,0 +1,3 @@
++<?php
++
++helloTHERE();
+
+EOF;
+		$shell->registerCommand("git diff 'master'... --no-prefix 'hello.lib'", $fixture);
+		$shell->registerCommand("git cat-file -e 'master':'hello.lib'", '', 128);
+		$shell->registerCommand("cat 'hello.lib' | phpcs --report=json -q --extensions='lib' --stdin-path='hello.lib' -", '{"totals":{"errors":0,"warnings":1,"fixable":0},"files":{"\/srv\/www\/wordpress-default\/public_html\/test\/hello.lib":{"errors":0,"warnings":1,"messages":[{"message":"Found unimported symbol ' . "'helloTHERE'" . '.","source":"ImportDetection.Imports.RequireImports.Symbol","severity":5,"fixable":false,"type":"WARNING","line":3,"column":1}]}}}');
+
+		$options = [
+			'git-branch' => 'master',
+			'extensions' => 'lib',
+		];
+		$expected = PhpcsMessages::fromArrays([
+			[
+				'type' => 'WARNING',
+				'severity' => 5,
+				'fixable' => false,
+				'column' => 1,
+				'source' => 'ImportDetection.Imports.RequireImports.Symbol',
+				'line' => 3,
+				'message' => "Found unimported symbol 'helloTHERE'.",
+			],
+		], '/dev/null');
+		$messages = runGitWorkflow([$gitFile], $options, $shell, '\PhpcsChangedTests\Debug');
+		$this->assertEquals($expected->getMessages(), $messages->getMessages());
+	}
 }

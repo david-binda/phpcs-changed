@@ -36,7 +36,8 @@ $options = getopt(
 		'git-branch:',
 		'standard:',
 		'report:',
-		'debug'
+		'debug',
+		'extensions:',
 	],
 	$optind
 );
