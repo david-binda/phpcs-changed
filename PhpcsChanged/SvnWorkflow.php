@@ -5,6 +5,7 @@ namespace PhpcsChanged\SvnWorkflow;
 
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
+use function PhpcsChanged\PhpcsCommand\getCommand;;
 
 function validateSvnFileExists(string $svnFile, string $svn, callable $isReadable, callable $executeCommand, callable $debug): void {
 	if (! $isReadable($svnFile)) {
@@ -41,8 +42,8 @@ function isNewSvnFile(string $svnFile, string $svn, callable $executeCommand, ca
 	return (false !== strpos($svnStatusOutput, 'Schedule: add'));
 }
 
-function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
+function getSvnBasePhpcsOutput(string $svnFile, string $svn, array $options, callable $executeCommand, callable $debug): string {
+	$oldFilePhpcsOutputCommand = "${svn} cat " . escapeshellarg($svnFile) . ' | ' . getCommand($svnFile, $options);
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
@@ -52,8 +53,8 @@ function getSvnBasePhpcsOutput(string $svnFile, string $svn, string $phpcs, stri
 	return $oldFilePhpcsOutput;
 }
 
-function getSvnNewPhpcsOutput(string $svnFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($svnFile) . ' -';
+function getSvnNewPhpcsOutput(string $svnFile, string $cat, array $options, callable $executeCommand, callable $debug): string {
+	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($svnFile) . ' | ' . getCommand($svnFile, $options);
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {

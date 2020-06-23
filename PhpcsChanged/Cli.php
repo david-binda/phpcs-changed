@@ -186,18 +186,14 @@ function runSvnWorkflow(array $svnFiles, array $options, ShellOperator $shell, c
 
 function runSvnWorkflowForFile(string $svnFile, array $options, ShellOperator $shell, callable $debug): PhpcsMessages {
 	$svn = getenv('SVN') ?: 'svn';
-	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
-
-	$phpcsStandard = $options['standard'] ?? null;
-	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
 
 	try {
 		validateSvnFileExists($svnFile, $svn, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getSvnUnifiedDiff($svnFile, $svn, [$shell, 'executeCommand'], $debug);
 		$isNewFile = isNewSvnFile($svnFile, $svn, [$shell, 'executeCommand'], $debug);
-		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
-		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getSvnBasePhpcsOutput($svnFile, $svn, $options, [$shell, 'executeCommand'], $debug);
+		$newFilePhpcsOutput = getSvnNewPhpcsOutput($svnFile, $cat, $options, [$shell, 'executeCommand'], $debug);
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
@@ -242,15 +238,12 @@ function runGitWorkflowForFile(string $gitFile, array $options, ShellOperator $s
 	$phpcs = getenv('PHPCS') ?: 'phpcs';
 	$cat = getenv('CAT') ?: 'cat';
 
-	$phpcsStandard = $options['standard'] ?? null;
-	$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-
 	try {
 		validateGitFileExists($gitFile, $git, [$shell, 'isReadable'], [$shell, 'executeCommand'], $debug);
 		$unifiedDiff = getGitUnifiedDiff($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
 		$isNewFile = isNewGitFile($gitFile, $git, [$shell, 'executeCommand'], $options, $debug);
-		$oldFilePhpcsOutput = $isNewFile ? '' : getGitBasePhpcsOutput($gitFile, $git, $phpcs, $phpcsStandardOption, [$shell, 'executeCommand'], $options, $debug);
-		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $phpcs, $cat, $phpcsStandardOption, [$shell, 'executeCommand'], $debug);
+		$oldFilePhpcsOutput = $isNewFile ? '' : getGitBasePhpcsOutput($gitFile, $git, $options, [$shell, 'executeCommand'], $debug);
+		$newFilePhpcsOutput = getGitNewPhpcsOutput($gitFile, $cat, $options, [$shell, 'executeCommand'], $debug);
 	} catch( NoChangesException $err ) {
 		$debug($err->getMessage());
 		$unifiedDiff = '';
@@ -273,14 +266,40 @@ function reportMessagesAndExit(PhpcsMessages $messages, string $reportType, arra
 	exit($reporter->getExitCode($messages));
 }
 
-function fileHasValidExtension(\SplFileInfo $file): bool {
-	// The followin logic follows the same in PHPCS. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
-	$AllowedExtensions = [
+function getAllowedExtensions(?string $extensions): array {
+	$allowedExtensions = [
 		'php',
 		'inc',
 		'js',
 		'css',
-	];
+        ];
+
+	if (null === $extensions) {
+		return $allowedExtensions;
+	}
+	$extensions = explode(',', $extensions);
+	$newExtensions = [];
+	foreach ($extensions as $ext) {
+		$slash = strpos($ext, '/');
+		if ($slash !== false) {
+			// They specified the tokenizer too.
+			list($ext, $tokenizer) = explode('/', $ext);
+			// But as they are going to be removed anyway, we don't support the tokenizer param.
+			$newExtensions[] = $ext;
+			continue;
+		}
+
+		$newExtensions[] = $ext;
+	}
+
+	return $newExtensions;
+}
+
+function fileHasValidExtension(\SplFileInfo $file, string $extensionsOption = null): bool {
+	// The followin logic follows the same in PHPCS. See https://github.com/squizlabs/PHP_CodeSniffer/blob/2ecd8dc15364cdd6e5089e82ffef2b205c98c412/src/Filters/Filter.php#L161
+
+	$allowedExtensions = getAllowedExtensions($extensionsOption);
+
 	// Extensions can only be checked for files.
 	if (!$file->isFile()) {
 		return false;
@@ -298,7 +317,7 @@ function fileHasValidExtension(\SplFileInfo $file): bool {
 		$extensions[] = implode('.', $fileParts);
 		array_shift($fileParts);
 	}
-	$matches = array_intersect($extensions, $AllowedExtensions);
+	$matches = array_intersect($extensions, $allowedExtensions);
 	if (empty($matches) === true) {
 		return false;
 	}

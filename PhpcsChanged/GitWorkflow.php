@@ -5,6 +5,7 @@ namespace PhpcsChanged\GitWorkflow;
 
 use PhpcsChanged\NoChangesException;
 use PhpcsChanged\ShellException;
+use function PhpcsChanged\PhpcsCommand\getCommand;
 
 function validateGitFileExists(string $gitFile, string $git, callable $isReadable, callable $executeCommand, callable $debug): void {
 	if (! $isReadable($gitFile)) {
@@ -65,13 +66,13 @@ function isNewGitFileLocal(string $gitFile, string $git, callable $executeComman
 	return isset($gitStatusOutput[0]) && $gitStatusOutput[0] === 'A';
 }
 
-function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, string $phpcsStandardOption, callable $executeCommand, array $options, callable $debug): string {
+function getGitBasePhpcsOutput(string $gitFile, string $git, array $options, callable $executeCommand, callable $debug): string {
 	if ( isset($options['git-branch']) && ! empty($options['git-branch']) ) {
 		$rev = escapeshellarg($options['git-branch']);
 	} else {
 		$rev = isset($options['git-unstaged']) ? ':0' : 'HEAD';
 	}
-	$oldFilePhpcsOutputCommand = "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ") | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) . ' -';
+	$oldFilePhpcsOutputCommand = "${git} show {$rev}:$(${git} ls-files --full-name " . escapeshellarg($gitFile) . ') | ' . getCommand($gitFile, $options);
 	$debug('running orig phpcs command:', $oldFilePhpcsOutputCommand);
 	$oldFilePhpcsOutput = $executeCommand($oldFilePhpcsOutputCommand);
 	if (! $oldFilePhpcsOutput) {
@@ -81,8 +82,9 @@ function getGitBasePhpcsOutput(string $gitFile, string $git, string $phpcs, stri
 	return $oldFilePhpcsOutput;
 }
 
-function getGitNewPhpcsOutput(string $gitFile, string $phpcs, string $cat, string $phpcsStandardOption, callable $executeCommand, callable $debug): string {
-	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($gitFile) . " | {$phpcs} --report=json -q" . $phpcsStandardOption . ' --stdin-path=' .  escapeshellarg($gitFile) .' -';
+function getGitNewPhpcsOutput(string $gitFile, string $cat, array $options, callable $executeCommand, callable $debug): string {
+	
+	$newFilePhpcsOutputCommand = "{$cat} " . escapeshellarg($gitFile) . ' | ' . getCommand($gitFile, $options);
 	$debug('running new phpcs command:', $newFilePhpcsOutputCommand);
 	$newFilePhpcsOutput = $executeCommand($newFilePhpcsOutputCommand);
 	if (! $newFilePhpcsOutput) {
