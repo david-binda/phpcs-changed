@@ -169,94 +169,94 @@ class CliOptions {
 	public static function fromArray(array $options): self {
 		$cliOptions = new self();
 		// Note that this array is likely created by `getopt()` which sets any
-		// boolean option to `false`, meaning that we must use `isset()` to
-		// determine if these options are set.
-		if (isset($options['files'])) {
+		// boolean option to `false` (it's so confusing), meaning that we cannot
+		// check the truthiness of the option.
+		if (array_key_exists('files', $options)) {
 			$cliOptions->files = $options['files'];
 		}
-		if (isset($options['no-vendor-phpcs'])) {
+		if (array_key_exists('no-vendor-phpcs', $options)) {
 			$cliOptions->noVendorPhpcs = true;
 		}
-		if (isset($options['phpcs-path'])) {
+		if (array_key_exists('phpcs-path', $options)) {
 			$cliOptions->phpcsPath = $options['phpcs-path'];
 		}
-		if (isset($options['git-path'])) {
+		if (array_key_exists('git-path', $options)) {
 			$cliOptions->gitPath = $options['git-path'];
 		}
-		if (isset($options['cat-path'])) {
+		if (array_key_exists('cat-path', $options)) {
 			$cliOptions->catPath = $options['cat-path'];
 		}
-		if (isset($options['svn-path'])) {
+		if (array_key_exists('svn-path', $options)) {
 			$cliOptions->svnPath = $options['svn-path'];
 		}
-		if (isset($options['svn'])) {
+		if (array_key_exists('svn', $options)) {
 			$cliOptions->mode = Modes::SVN;
 		}
-		if (isset($options['git'])) {
+		if (array_key_exists('git', $options)) {
 			$cliOptions->mode = Modes::GIT_STAGED;
 		}
-		if (isset($options['git-unstaged'])) {
+		if (array_key_exists('git-unstaged', $options)) {
 			$cliOptions->mode = Modes::GIT_UNSTAGED;
 		}
-		if (isset($options['git-staged'])) {
+		if (array_key_exists('git-staged', $options)) {
 			$cliOptions->mode = Modes::GIT_STAGED;
 		}
-		if (isset($options['git-base'])) {
+		if (array_key_exists('git-base', $options)) {
 			$cliOptions->mode = Modes::GIT_BASE;
 			$cliOptions->gitBase = $options['git-base'];
 		}
-		if (isset($options['report'])) {
+		if (array_key_exists('report', $options)) {
 			$cliOptions->reporter = $options['report'];
 		}
-		if (isset($options['debug'])) {
+		if (array_key_exists('debug', $options)) {
 			$cliOptions->debug = true;
 		}
-		if (isset($options['clear-cache'])) {
+		if (array_key_exists('clear-cache', $options)) {
 			$cliOptions->clearCache = true;
 		}
-		if (isset($options['cache'])) {
+		if (array_key_exists('cache', $options)) {
 			$cliOptions->useCache = true;
 		}
-		if (isset($options['no-cache'])) {
+		if (array_key_exists('no-cache', $options)) {
 			$cliOptions->useCache = false;
 		}
-		if (isset($options['diff'])) {
+		if (array_key_exists('diff', $options)) {
 			$cliOptions->mode = Modes::MANUAL;
 			$cliOptions->diffFile = $options['diff'];
 		}
-		if (isset($options['phpcs-unmodified'])) {
+		if (array_key_exists('phpcs-unmodified', $options)) {
 			$cliOptions->mode = Modes::MANUAL;
 			$cliOptions->phpcsUnmodified = $options['phpcs-unmodified'];
 		}
-		if (isset($options['phpcs-modified'])) {
+		if (array_key_exists('phpcs-modified', $options)) {
 			$cliOptions->mode = Modes::MANUAL;
 			$cliOptions->phpcsModified = $options['phpcs-modified'];
 		}
-		if (isset($options['s'])) {
+		if (array_key_exists('s', $options)) {
 			$cliOptions->showMessageCodes = true;
 		}
-		if (isset($options['standard'])) {
+		if (array_key_exists('standard', $options)) {
 			$cliOptions->phpcsStandard = $options['standard'];
 		}
-		if (isset($options['extensions'])) {
+		if (array_key_exists('extensions', $options)) {
 			$cliOptions->phpcsExtensions = $options['extensions'];
 		}
-		if (isset($options['always-exit-zero'])) {
+		if (array_key_exists('always-exit-zero', $options)) {
 			$cliOptions->alwaysExitZero = true;
 		}
-		if (isset($options['no-cache-git-root'])) {
+		if (array_key_exists('no-cache-git-root', $options)) {
 			$cliOptions->noCacheGitRoot = true;
 		}
-		if (isset($options['no-verify-git-file'])) {
+		if (array_key_exists('no-verify-git-file', $options)) {
 			$cliOptions->noVerifyGitFile = true;
 		}
-		if (isset($options['warning-severity'])) {
+		if (array_key_exists('warning-severity', $options)) {
 			$cliOptions->warningSeverity = $options['warning-severity'];
 		}
-		if (isset($options['error-severity'])) {
+		if (array_key_exists('error-severity', $options)) {
 			$cliOptions->errorSeverity = $options['error-severity'];
 		}
-		if (isset($options['i'])) {
+		if (array_key_exists('i', $options)) {
 			$cliOptions->mode = Modes::INFO_ONLY;
 		}
 		$cliOptions->validate();
@@ -267,31 +267,31 @@ class CliOptions {
 		$options = [];
 		$options['report'] = $this->reporter;
 		$options['files'] = $this->files;
-		if ($this->phpcsStandard) {
+		if (boolval($this->phpcsStandard)) {
 			$options['standard'] = $this->phpcsStandard;
 		}
-		if ($this->phpcsExtensions) {
+		if (boolval($this->phpcsExtensions)) {
 			$options['extensions'] = $this->phpcsExtensions;
 		}
-		if ($this->noVendorPhpcs) {
+		if (boolval($this->noVendorPhpcs)) {
 			$options['no-vendor-phpcs'] = true;
 		}
-		if ($this->phpcsPath) {
+		if (boolval($this->phpcsPath)) {
 			$options['phpcs-path'] = $this->phpcsPath;
 		}
-		if ($this->gitPath) {
+		if (boolval($this->gitPath)) {
 			$options['git-path'] = $this->gitPath;
 		}
-		if ($this->catPath) {
+		if (boolval($this->catPath)) {
 			$options['cat-path'] = $this->catPath;
 		}
-		if ($this->svnPath) {
+		if (boolval($this->svnPath)) {
 			$options['svn-path'] = $this->svnPath;
 		}
-		if ($this->debug) {
+		if (boolval($this->debug)) {
 			$options['debug'] = true;
 		}
-		if ($this->showMessageCodes) {
+		if (boolval($this->showMessageCodes)) {
 			$options['s'] = true;
 		}
 		if ($this->mode === Modes::SVN) {
@@ -309,13 +309,13 @@ class CliOptions {
 			$options['git'] = true;
 			$options['git-base'] = $this->gitBase;
 		}
-		if ($this->useCache) {
+		if (boolval($this->useCache)) {
 			$options['cache'] = true;
 		}
-		if (! $this->useCache) {
+		if (! boolval($this->useCache)) {
 			$options['no-cache'] = true;
 		}
-		if ($this->clearCache) {
+		if (boolval($this->clearCache)) {
 			$options['clear-cache'] = true;
 		}
 		if ($this->mode === Modes::MANUAL) {
@@ -323,19 +323,22 @@ class CliOptions {
 			$options['phpcs-unmodified'] = $this->phpcsUnmodified;
 			$options['phpcs-modified'] = $this->phpcsModified;
 		}
-		if ($this->alwaysExitZero) {
+		if (boolval($this->alwaysExitZero)) {
 			$options['always-exit-zero'] = true;
 		}
-		if ($this->noCacheGitRoot) {
+		if (boolval($this->noCacheGitRoot)) {
 			$options['no-cache-git-root'] = true;
 		}
-		if ($this->noVerifyGitFile) {
+		if (boolval($this->noVerifyGitFile)) {
 			$options['no-verify-git-file'] = true;
 		}
-		if (isset($this->warningSeverity)) {
+		// Note that both warningSeverity and errorSeverity can be the string '0'
+		// which is falsy in PHP but is a valid value here so we must be careful
+		// when testing for it.
+		if (is_string($this->warningSeverity) && strlen($this->warningSeverity) > 0) {
 			$options['warning-severity'] = $this->warningSeverity;
 		}
-		if (isset($this->errorSeverity)) {
+		if (is_string($this->errorSeverity) && strlen($this->errorSeverity) > 0) {
 			$options['error-severity'] = $this->errorSeverity;
 		}
 		return $options;
@@ -349,34 +352,62 @@ class CliOptions {
 	public function getExecutablePath(string $executableName): string {
 		switch ($executableName) {
 			case 'phpcs':
-				return $this->phpcsPath ?: getenv('PHPCS') ?: 'phpcs';
+				if (is_string($this->phpcsPath) && strlen($this->phpcsPath) > 0) {
+					return $this->phpcsPath;
+				}
+				$env = getenv('PHPCS');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'phpcs';
 			case 'git':
-				return $this->gitPath ?: getenv('GIT') ?: 'git';
+				if (is_string($this->gitPath) && strlen($this->gitPath) > 0) {
+					return $this->gitPath;
+				}
+				$env = getenv('GIT');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'git';
 			case 'cat':
-				return $this->catPath ?: getenv('CAT') ?: 'cat';
+				if (is_string($this->catPath) && strlen($this->catPath) > 0) {
+					return $this->catPath;
+				}
+				$env = getenv('CAT');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'cat';
 			case 'svn':
-				return $this->svnPath ?: getenv('SVN') ?: 'svn';
+				if (is_string($this->svnPath) && strlen($this->svnPath) > 0) {
+					return $this->svnPath;
+				}
+				$env = getenv('SVN');
+				if (is_string($env) && strlen($env) > 0) {
+					return $env;
+				}
+				return 'svn';
 			default:
 				throw new \Exception("No executable found called '{$executableName}'.");
 		}
 	}
 
 	public function validate(): void {
-		if (empty($this->mode)) {
+		if (! boolval($this->mode)) {
 			throw new InvalidOptionException('You must use either automatic or manual mode.');
 		}
 		if ($this->mode === Modes::MANUAL) {
-			if (empty($this->diffFile) || empty($this->phpcsUnmodified) || empty($this->phpcsModified)) {
+			if ( ! boolval($this->diffFile) || ! boolval($this->phpcsUnmodified) || ! boolval($this->phpcsModified)) {
 				throw new InvalidOptionException('Manual mode requires a diff, the unmodified file phpcs output, and the modified file phpcs output.');
 			}
 		}
-		if ($this->mode === Modes::GIT_BASE && empty($this->gitBase)) {
+		if ($this->mode === Modes::GIT_BASE && ! boolval($this->gitBase)) {
 			throw new InvalidOptionException('git-base mode requires a git object.');
 		}
-		if ($this->isGitMode() && empty($this->files)) {
+		if ($this->isGitMode() && ! boolval($this->files)) {
 			throw new InvalidOptionException('You must supply at least one file or directory to run in git mode.');
 		}
-		if ($this->mode === Modes::SVN && empty($this->files)) {
+		if ($this->mode === Modes::SVN && ! boolval($this->files)) {
 			throw new InvalidOptionException('You must supply at least one file or directory to run in svn mode.');
 		}
 	}

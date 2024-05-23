@@ -13,7 +13,7 @@ class FullReporter implements Reporter {
 		$files = array_unique(array_map(function(LintMessage $message): string {
 			return $message->getFile() ?? 'STDIN';
 		}, $messages->getMessages()));
-		if (empty($files)) {
+		if (count($files) === 0) {
 			$files = ['STDIN'];
 		}
 
@@ -52,7 +52,7 @@ class FullReporter implements Reporter {
 
 		$formattedLines = implode("\n", array_map(function(LintMessage $message) use ($longestNumber, $options): string {
 			$source = $message->getSource() ?: 'Unknown';
-			$sourceString = isset($options['s']) ? " ({$source})" : '';
+			$sourceString = array_key_exists('s', $options) ? " ({$source})" : '';
 			return sprintf(" %{$longestNumber}d | %s | %s%s", $message->getLineNumber(), $message->getType(), $message->getMessage(), $sourceString);
 		}, $messages));
 

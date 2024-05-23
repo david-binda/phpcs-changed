@@ -72,7 +72,7 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getPhpcsExecutable(): string {
-		if (! empty($this->options->phpcsPath) || ! empty(getenv('PHPCS'))) {
+		if (boolval($this->options->phpcsPath) || boolval(getenv('PHPCS'))) {
 			return $this->options->getExecutablePath('phpcs');
 		}
 		if (! $this->options->noVendorPhpcs && $this->doesPhpcsExistInVendor()) {
@@ -237,18 +237,18 @@ class UnixShell implements ShellOperator {
 	}
 
 	private function getPhpcsStandardOption(): string {
-		$phpcsStandard = $this->options->phpcsStandard;
-		$phpcsStandardOption = $phpcsStandard ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
-		$warningSeverity = $this->options->warningSeverity;
-		$phpcsStandardOption .= isset($warningSeverity) ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
-		$errorSeverity = $this->options->errorSeverity;
-		$phpcsStandardOption .= isset($errorSeverity) ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
+		$phpcsStandard = $this->options->phpcsStandard ?? '';
+		$phpcsStandardOption = strlen($phpcsStandard) > 0 ? ' --standard=' . escapeshellarg($phpcsStandard) : '';
+		$warningSeverity = $this->options->warningSeverity ?? '';
+		$phpcsStandardOption .= strlen($warningSeverity) > 0 ? ' --warning-severity=' . escapeshellarg($warningSeverity) : '';
+		$errorSeverity = $this->options->errorSeverity ?? '';
+		$phpcsStandardOption .= strlen($errorSeverity) > 0 ? ' --error-severity=' . escapeshellarg($errorSeverity) : '';
 		return $phpcsStandardOption;
 	}
 
 	private function getPhpcsExtensionsOption(): string {
-		$phpcsExtensions = $this->options->phpcsExtensions;
-		$phpcsExtensionsOption = $phpcsExtensions ? ' --extensions=' . escapeshellarg($phpcsExtensions) : '';
+		$phpcsExtensions = $this->options->phpcsExtensions ?? '';
+		$phpcsExtensionsOption = strlen($phpcsExtensions) > 0 ? ' --extensions=' . escapeshellarg($phpcsExtensions) : '';
 		return $phpcsExtensionsOption;
 	}
 
@@ -274,7 +274,7 @@ class UnixShell implements ShellOperator {
 		$debug = getDebug($this->options->debug);
 		$git = $this->options->getExecutablePath('git');
 		$objectOption = $this->options->mode === Modes::GIT_BASE ? ' ' . escapeshellarg($this->options->gitBase) . '...' : '';
-		$stagedOption = empty($objectOption) && $this->options->mode !== Modes::GIT_UNSTAGED ? ' --staged' : '';
+		$stagedOption = ! boolval($objectOption) && $this->options->mode !== Modes::GIT_UNSTAGED ? ' --staged' : '';
 		$unifiedDiffCommand = "{$git} diff{$stagedOption}{$objectOption} --no-prefix " . escapeshellarg($fileName);
 		$debug('running diff command:', $unifiedDiffCommand);
 		$unifiedDiff = $this->executeCommand($unifiedDiffCommand);
@@ -346,12 +346,8 @@ class UnixShell implements ShellOperator {
 	public function getSvnRevisionId(string $fileName): string {
 		$svnFileInfo = $this->getSvnFileInfo($fileName);
 		preg_match('/\bLast Changed Rev:\s([^\n]+)/', $svnFileInfo, $matches);
-		$version = $matches[1] ?? null;
-		if (! $version) {
-			// New files will not have a revision
-			return '';
-		}
-		return $version;
+		// New files will not have a revision
+		return $matches[1] ?? '';
 	}
 
 	private function getSvnFileInfo(string $fileName): string {
@@ -421,7 +417,11 @@ class UnixShell implements ShellOperator {
 		}
 
 		$matched = preg_match('/version\\s([0-9.]+)/uim', $versionPhpcsOutput, $matches);
-		if (empty($matched) || empty($matches[1])) {
+		if (
+			$matched === false
+			|| count($matches) < 2
+			|| strlen($matches[1]) < 1
+		) {
 			throw new ShellException("Cannot parse phpcs version output");
 		}
 
